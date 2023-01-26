@@ -16,10 +16,10 @@ class ReversiBoard(object):
         self.num_squares = dim*dim
         self.board = np.zeros((dim, dim), dtype=int)
         
-        self.board[dim//2 - 1, dim//2 - 1] = BLACK
-        self.board[dim//2 - 1, dim//2] = WHITE
-        self.board[dim//2, dim//2 - 1] = WHITE
-        self.board[dim//2, dim//2] = BLACK
+        self.board[dim//2 - 1, dim//2 - 1] = WHITE
+        self.board[dim//2 - 1, dim//2] = BLACK
+        self.board[dim//2, dim//2 - 1] = BLACK
+        self.board[dim//2, dim//2] = WHITE
 
     def legal_moves(self, player):
         if player not in [BLACK, WHITE]:

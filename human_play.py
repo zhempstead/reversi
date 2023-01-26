@@ -4,7 +4,7 @@ from board import ReversiBoard, BLACK, WHITE, EMPTY
 
 KEYS = 'qwertyuiopasdfghjklzxcvbnm'
 
-PLAYER = {BLACK: "Erica", WHITE: "Zach"}
+PLAYER = {BLACK: "BLACK", WHITE: "WHITE"}
 
 class Reversi(object):
     def __init__(self, dim):
@@ -14,8 +14,8 @@ class Reversi(object):
     def get_display_board(self):
         b = self.board.get_board().astype(object)
         b[np.where(b == 0)] = '.'
-        b[np.where(b == BLACK)] = 'E'
-        b[np.where(b == WHITE)] = 'Z'
+        b[np.where(b == BLACK)] = PLAYER[BLACK][0]
+        b[np.where(b == WHITE)] = PLAYER[WHITE][0]
         return b
 
     def play(self):
