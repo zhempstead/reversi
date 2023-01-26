@@ -2,7 +2,7 @@ import json
 
 import numpy as np
 
-from agents import DualAgent, GreedyAgent, HumanHumanAgent, RandomAgent
+from agents import DualAgent, GreedyAgent, HumanAgent, RandomAgent
 from constants import PLAYER
 from reversi_environment import ReversiEnvironment
 
@@ -65,6 +65,7 @@ class NpEncoder(json.JSONEncoder):
 if __name__ == '__main__':
     random = RandomAgent()
     greedy = GreedyAgent()
-    rg = ReversiGame(8, DualAgent(random, greedy), 'replays/dual.json', headless=True)
-    #rg = ReversiGame(8, HumanHumanAgent(), 'replays/human.json', headless=False)
+    human = HumanAgent()
+    rg = ReversiGame(8, DualAgent(greedy, human), 'replays/dual.json', headless=False)
+    #rg = ReversiGame(8, HumanAgent(), 'replays/human.json', headless=False)
     rg.play()

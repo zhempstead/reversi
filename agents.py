@@ -23,7 +23,7 @@ class ReversiAgent(object):
 
 KEYS = 'qwertyuiopasdfghjklzxcvbnm'
 
-class HumanHumanAgent(ReversiAgent):
+class HumanAgent(ReversiAgent):
     def forced_pass(self, env):
         print(board2str(env.board))
         print(f"No legal actions for {PLAYER[env.curr_player]}!")
