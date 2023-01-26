@@ -13,9 +13,9 @@ class Reversi(object):
 
     def get_display_board(self):
         b = self.board.get_board().astype(object)
-        b[np.where(b == 0)] = '.'
-        b[np.where(b == BLACK)] = PLAYER[BLACK][0]
-        b[np.where(b == WHITE)] = PLAYER[WHITE][0]
+        b[np.where(b == 0)] = '\033[1;32;40m■\033[1;37;50m'
+        b[np.where(b == BLACK)] = '○'
+        b[np.where(b == WHITE)] = '●'
         return b
 
     def play(self):
@@ -46,7 +46,7 @@ class Reversi(object):
         legal_moves = self.board.legal_moves(player)
         key2move = dict(zip(KEYS, legal_moves))
         for key, move in key2move.items():
-            display_board[move] = key
+            display_board[move] = f"\033[1;36;40m{key}\033[1;37;50m"
 
         for row in display_board:
             print(' '.join(row))
