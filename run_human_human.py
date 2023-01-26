@@ -16,6 +16,8 @@ class HumanHuman(object):
 
         self.record = {'dim': dim, 'actions': []}
         self.record_file = record_file
+        if self.record_file:
+            print(f"Recording game at '{self.record_file}'")
 
     def play(self):
         while(True):
@@ -54,8 +56,8 @@ class HumanHuman(object):
         else:
             print(f"{PLAYER[reward]} wins!")
         if self.record_file is not None:
-            with open(self.record_file, 'w') as record_json:
-                record_json.write(json.dumps(self.record))
+            with open(self.record_file, 'w') as record_fp:
+                json.dump(self.record, record_fp, cls=NpEncoder)
 
     
     def print_score(self):
@@ -66,6 +68,16 @@ class HumanHuman(object):
     def pause(self):
         time.sleep(0.5)
 
+class NpEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            return float(obj)
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return super(NpEncoder, self).default(obj)
+
 if __name__ == '__main__':
-    r = HumanHuman(6)
+    r = HumanHuman(8, 'replays/game.json')
     r.play()
