@@ -1,6 +1,7 @@
 import random
 import time
 
+from alphabeta import alphabeta
 from constants import BLACK, WHITE, PLAYER
 from display_board import board2str
 
@@ -52,20 +53,46 @@ class RandomAgent(ReversiAgent):
     def policy(self, legal_actions, env, _):
         return random.choice(list(legal_actions))
 
-class GreedyAgent(ReversiAgent):
+class HeuristicAgent(ReversiAgent):
     def policy(self, legal_actions, env, _):
-        best_score = -1
-        best_actions = []
+        best_score = -float('inf')
         player = env.curr_player
         for action in legal_actions:
             test_env, _, _ = env.act(action)
-            score = test_env.get_score()[player]
+            score = self.heuristic(test_env) * player
             if score > best_score:
                 best_score = score
                 best_actions = []
             if score == best_score:
                 best_actions.append(action)
         return random.choice(best_actions)
+
+    def heuristic(self, env):
+        pass
+
+class MinimaxAgent(HeuristicAgent):
+    def __init__(self, search_depth):
+        self.search_depth = search_depth
+
+    def heuristic(self, env):
+        return alphabeta(env, self.search_depth, -float('inf'), float('inf'), self.leaf_heuristic)
+
+    def leaf_heuristic(self, env):
+        pass
+
+class ScoreHeuristicAgent(HeuristicAgent):
+    def score(self, env):
+        s = env.get_score()
+        return (s[BLACK] - s[WHITE]) / (s[BLACK] + s[WHITE])
+
+class ScoreGreedyAgent(ScoreHeuristicAgent):
+    def heuristic(self, env):
+        return self.score(env)
+
+class ScoreMinimaxAgent(ScoreHeuristicAgent, MinimaxAgent):
+    def leaf_heuristic(self, env):
+        return self.score(env)
+
 
 class DualAgent(ReversiAgent):
     def __init__(self, agent_b, agent_w):
