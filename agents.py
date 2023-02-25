@@ -4,6 +4,7 @@ import time
 from alphabeta import alphabeta
 from constants import BLACK, WHITE, PLAYER
 from display_board import board2str
+import gpt_query
 
 class ReversiAgent(object):
     def __init__(self):
@@ -48,6 +49,35 @@ class HumanAgent(ReversiAgent):
     
     def pause(self):
         time.sleep(0.5)
+
+class GPTAgent(ReversiAgent):
+    def __init__(self, learning_shots=0):
+        self.learning_shots=learning_shots
+
+    def forced_pass(self, env):
+        print(f"No legal actions for GPT Agent so no query sent")
+        super().forced_pass(env)
+
+    def policy(self, legal_actions, env, prev_env):
+        if len(legal_actions) == 1:
+            print(f"Single legal action - no query sent")
+            return list(legal_actions)[0]
+        response = gpt_query.move_query(env, legal_actions)
+        move = self.parse_response(response)
+        if move not in legal_actions:
+            raise ValueError(f"{move} is not a legal action")
+        return move
+    
+    def parse_response(self, response):
+        try:
+            left, right = response.split(', ', 1)
+            right = right.split(']')[0]
+            x = int(left) - 1
+            y = int(right) - 1
+        except:
+            raise ValueError(f"Couldn't parse GPT response '{response}'")
+        return x, y
+
 
 class RandomAgent(ReversiAgent):
     def policy(self, legal_actions, env, _):

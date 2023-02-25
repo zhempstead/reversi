@@ -2,7 +2,7 @@ import json
 
 import numpy as np
 
-from agents import DualAgent, HumanAgent, RandomAgent, ScoreGreedyAgent, ScoreMinimaxAgent
+from agents import DualAgent, GPTAgent, HumanAgent, RandomAgent, ScoreGreedyAgent, ScoreMinimaxAgent
 from constants import PLAYER
 from reversi_environment import ReversiEnvironment
 
@@ -66,8 +66,10 @@ if __name__ == '__main__':
     random = RandomAgent()
     greedy = ScoreGreedyAgent()
     human = HumanAgent()
+    gpt = GPTAgent()
     minimax_1 = ScoreMinimaxAgent(1)
     minimax_2 = ScoreMinimaxAgent(-1)
-    rg = ReversiGame(4, minimax_2, 'replays/dual.json', headless=False)
+    #rg = ReversiGame(6, DualAgent(random, gpt), 'replays/dual.json', headless=False)
+    rg = ReversiGame(6, minimax_2, 'replays/authoritative.json', headless=True)
     #rg = ReversiGame(8, HumanAgent(), 'replays/human.json', headless=False)
     rg.play()
