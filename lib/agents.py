@@ -1,10 +1,10 @@
 import random
-import re
 import time
 
 from .alphabeta import alphabeta
 from .constants import BLACK, WHITE, PLAYER
 from .display_board import board2str
+from .notation import extract_notation
 from . import gpt_query
 
 class ReversiAgent(object):
@@ -51,8 +51,6 @@ class HumanAgent(ReversiAgent):
     def pause(self):
         time.sleep(0.5)
 
-GPT_REGEX = re.compile(r'\[(?P<x>\d+), (?P<y>\d+)\]')
-
 class GPTAgent(ReversiAgent):
 
     def __init__(self, model="gpt-3.5-turbo", learning_shots=0, replay=None):
@@ -75,12 +73,10 @@ class GPTAgent(ReversiAgent):
         return move
     
     def parse_response(self, response):
-        match = GPT_REGEX.search(response)
+        match = extract_notation(response)
         if match is None:
             raise ValueError(f"Couldn't parse GPT response '{response}'")
-        x = int(match.group('x')) - 1
-        y = int(match.group('y')) - 1
-        return x, y
+        return match
 
 
 class RandomAgent(ReversiAgent):

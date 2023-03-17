@@ -4,12 +4,13 @@ import os
 import openai
 
 from .constants import PLAYER
+from .notation import coords2notation, max_col
 
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 def preamble(env):
-    return f"""You are an expert at Reversi (also known as Othello). We are playing on a board that is {env.dim}-by-{env.dim}. All piece positions are 1-indexed, so [1, 1] means the upper-left corner of the board."""
+    return f"""You are an expert at Reversi (also known as Othello). We are playing on a board that is {env.dim}-by-{env.dim}. We use standard Othello notation where rows are numbered from top to bottom by 1 to {env.dim}, and columns are indicated from left to right by 'a' through '{max_col(env.dim)}'. So for instance, '3b' denotes the square in the third row from the left and the second column from the top."""
 
 def move_prompt(env, legal_actions):
     return f"""Here are the positions of your pieces: {piece_list(env, env.curr_player)}
@@ -23,7 +24,7 @@ def example_conversation(replay, turn):
     env = replay.state_before_turn(turn)
     legal_actions = env.legal_actions()
     action = replay.get_action(turn)
-    return (move_prompt(env, legal_actions), f'[{action[0]}, {action[1]}].')
+    return (move_prompt(env, legal_actions), f"{coords2notation(action)}.")
 
 def move_query(model, env, legal_moves, shots=0, replay=None):
     prompt = preamble(env)
@@ -49,4 +50,4 @@ def piece_list(env, player):
     return poslist2str(zip(*np.where(env.board == player)))
 
 def poslist2str(poslist):
-    return ", ".join([f"[{x+1}, {y+1}]" for x, y in poslist])
+    return ", ".join([coords2notation(coords) for coords in poslist])
