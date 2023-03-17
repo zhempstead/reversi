@@ -1,7 +1,8 @@
 .DS_Store
 *.swp
-__pycache__/*
+**/__pycache__/*
 
 venv/*
 replays/*
+results/*
 .env
