@@ -25,7 +25,7 @@ def gpt_game(dims, other_agent, gpt_player, shots, replay, record_file=None):
 # Replace this with any replay suitable for generating learning examples for GPT
 replay = Replay("replays/authoritative_8.json")
 
-results = {'opponent': [], 'shots': [], 'gpt_player': [], 'result': []}
+results = {'opponent': [], 'shots': [], 'gpt_player': [], 'victor': []}
 random = RandomAgent()
 greedy = ScoreGreedyAgent()
 minimax3 = ScoreMinimaxAgent(3)
