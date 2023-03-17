@@ -3,17 +3,17 @@ import re
 A = ord('a')
 
 # Assumes dimensions of 8 or fewer
-REGEX = re.compile(r'\d[a-h]')
+REGEX = re.compile(r'[a-h]\d')
 
 def max_col(dim):
     return chr(A + dim - 1)
 
 def coords2notation(coords):
     r, c = coords
-    return f"{r+1}{chr(A + c)}"
+    return f"{chr(A + c)}{r+1}"
 
 def notation2coords(pos):
-    r, c = pos
+    c, r = pos
     return (int(r) - 1, ord(c) - A)
 
 def extract_notation(message):

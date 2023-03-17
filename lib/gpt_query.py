@@ -10,7 +10,7 @@ load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 def preamble(env):
-    return f"""You are an expert at Reversi (also known as Othello). We are playing on a board that is {env.dim}-by-{env.dim}. We use standard Othello notation where rows are numbered from top to bottom by 1 to {env.dim}, and columns are indicated from left to right by 'a' through '{max_col(env.dim)}'. So for instance, '3b' denotes the square in the third row from the left and the second column from the top."""
+    return f"""You are an expert at Reversi (also known as Othello). We are playing on a board that is {env.dim}-by-{env.dim}. We use standard Othello notation where rows are numbered from top to bottom by 1 to {env.dim}, and columns are indicated from left to right by 'a' through '{max_col(env.dim)}'. So for instance, 'b3' denotes the square in the second column from the left and the third row from the top."""
 
 def move_prompt(env, legal_actions):
     return f"""Here are the positions of your pieces: {piece_list(env, env.curr_player)}
