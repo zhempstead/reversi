@@ -51,8 +51,10 @@ class HumanAgent(ReversiAgent):
         time.sleep(0.5)
 
 class GPTAgent(ReversiAgent):
-    def __init__(self, learning_shots=0):
+    def __init__(self, model="text-curie-001", learning_shots=0, replay=None):
+        self.model = model
         self.learning_shots=learning_shots
+        self.replay = replay
 
     def forced_pass(self, env):
         print(f"No legal actions for GPT Agent so no query sent")
@@ -62,7 +64,7 @@ class GPTAgent(ReversiAgent):
         if len(legal_actions) == 1:
             print(f"Single legal action - no query sent")
             return list(legal_actions)[0]
-        response = gpt_query.move_query(env, legal_actions)
+        response = gpt_query.move_query(self.model, env, legal_actions, self.learning_shots, self.replay)
         move = self.parse_response(response)
         if move not in legal_actions:
             raise ValueError(f"{move} is not a legal action")
