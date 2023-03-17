@@ -2,8 +2,8 @@ import itertools
 
 import numpy as np
 
-from constants import BLACK, WHITE, EMPTY, PLAYER
-from display_board import board2str
+from .constants import BLACK, WHITE, EMPTY, PLAYER
+from .display_board import board2str
 
 class ReversiEnvironment(object):
     def __init__(self, dim, board=None, curr_player=BLACK, last_moved=True):

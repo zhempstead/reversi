@@ -2,7 +2,7 @@ import itertools
 
 import numpy as np
 
-from constants import BLACK, WHITE, EMPTY, PLAYER
+from .constants import BLACK, WHITE, EMPTY, PLAYER
 
 def board2str(board, other_board=None, key2move=None, player=None):
     '''

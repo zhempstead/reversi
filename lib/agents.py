@@ -2,10 +2,10 @@ import random
 import re
 import time
 
-from alphabeta import alphabeta
-from constants import BLACK, WHITE, PLAYER
-from display_board import board2str
-import gpt_query
+from .alphabeta import alphabeta
+from .constants import BLACK, WHITE, PLAYER
+from .display_board import board2str
+from . import gpt_query
 
 class ReversiAgent(object):
     def __init__(self):

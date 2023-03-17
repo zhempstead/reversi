@@ -5,7 +5,7 @@ python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 
-python reversi_game.py
+python human_cpu_game.py
 ```
 
 An AI can be implemented by creating a `ReversiAgent` subclass, implementing the `policy` method.

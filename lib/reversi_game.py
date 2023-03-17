@@ -3,10 +3,10 @@ import json
 import numpy as np
 import pandas as pd
 
-from agents import DualAgent, GPTAgent, HumanAgent, RandomAgent, ScoreGreedyAgent, ScoreMinimaxAgent
-from constants import PLAYER, BLACK, WHITE
-from replay import Replay
-from reversi_environment import ReversiEnvironment
+from .agents import DualAgent, GPTAgent, HumanAgent, RandomAgent, ScoreGreedyAgent, ScoreMinimaxAgent
+from .constants import PLAYER, BLACK, WHITE
+from .replay import Replay
+from .reversi_environment import ReversiEnvironment
 
 class ReversiGame(object):
     def __init__(self, dim, agent, record_file=None, headless=False):
@@ -78,37 +78,3 @@ def gpt_game(dims, other_agent, gpt_player, shots, replay, record_file=None):
         print(e)
         result = 2
     return result
-
-if __name__ == '__main__':
-    replay = Replay("replays/authoritative_8.json")
-
-    '''
-    random = RandomAgent()
-    greedy = ScoreGreedyAgent()
-    human = HumanAgent()
-    gpt = GPTAgent(learning_shots=2, replay=replay)
-    minimax_1 = ScoreMinimaxAgent(1)
-    minimax_2 = ScoreMinimaxAgent(-1)
-    #for mmx in range(100):
-    #    print(f"{mmx} forward look")
-    #    minimax = ScoreMinimaxAgent(mmx)
-    #    rg = ReversiGame(6, minimax, f'replays/authoritative_{mmx}.json', headless=False)
-    #    rg.play()
-    rg = ReversiGame(6, DualAgent(random, gpt), 'replays/rand_v_gpt.json', headless=False)
-    #rg = ReversiGame(8, HumanAgent(), 'replays/human.json', headless=False)
-    rg.play()
-    '''
-
-    results = {'opponent': [], 'shots': [], 'gpt_player': [], 'result': []}
-    random = RandomAgent()
-    greedy = ScoreGreedyAgent()
-    minimax3 = ScoreMinimaxAgent(3)
-    for i in range(10):
-        for shots in range(3):
-            for gpt_player in [BLACK, WHITE]:
-                result = gpt_game(6, minimax3, gpt_player, shots, replay, f'replays/gpt_{i}_{shots}_{gpt_player}.json')
-                results['opponent'].append('minimax3')
-                results['shots'].append(shots)
-                results['gpt_player'].append(gpt_player)
-                results['result'].append(result)
-    pd.DataFrame(results).to_csv('gpt_results.csv', index=False)

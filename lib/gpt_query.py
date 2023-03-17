@@ -3,7 +3,7 @@ import numpy as np
 import os
 import openai
 
-from constants import PLAYER
+from .constants import PLAYER
 
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")

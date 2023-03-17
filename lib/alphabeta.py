@@ -1,4 +1,4 @@
-from constants import BLACK
+from .constants import BLACK
 
 def alphabeta(state, depth, alpha, beta, heuristic):
     if depth == 0:
