@@ -66,7 +66,7 @@ class NpEncoder(json.JSONEncoder):
 
 
 def gpt_game(dims, other_agent, gpt_player, shots, replay, record_file=None):
-    gpt = GPTAgent(model="text-davinci-003", learning_shots=shots, replay=replay)
+    gpt = GPTAgent(model="gpt-3.5-turbo", learning_shots=shots, replay=replay)
     if gpt_player == BLACK:
         dual = DualAgent(gpt, other_agent)
     else:

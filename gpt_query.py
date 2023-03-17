@@ -17,27 +17,33 @@ Here are the positions of your opponent's pieces: {piece_list(env, env.curr_play
 
 It is your turn. Here are your legal moves: {poslist2str(legal_actions)}
 
-As an expert Reversi player, your best move is ["""
+As an expert Reversi player, what is your best move? Just respond with the move itself."""
 
-def saved_prompt(replay, turn):
+def example_conversation(replay, turn):
     env = replay.state_before_turn(turn)
     legal_actions = env.legal_actions()
     action = replay.get_action(turn)
-    return f"{move_prompt(env, legal_actions)}{action[0]}, {action[1]}]."
+    return (move_prompt(env, legal_actions), f'[{action[0]}, {action[1]}].')
 
 def move_query(model, env, legal_moves, shots=0, replay=None):
-    prompt = [preamble(env)]
+    prompt = preamble(env)
+    messages = []
     for shot in range(shots):
         turn = shot*3 + 2
-        prompt.append(saved_prompt(replay, turn))
-        prompt.append("Okay, now let's imagine a new scenario.")
+        messages += example_conversation(replay, turn)
+    messages.append(move_prompt(env, legal_moves))
+    return query(model, prompt, messages)
 
-    prompt.append(move_prompt(env, legal_moves))
-    return query(model, "\n\n".join(prompt))
-
-def query(model, prompt):
-    response = openai.Completion.create(model=model, prompt=prompt, temperature=0, max_tokens=10)
-    return response['choices'][0]['text'].strip()
+def query(model, prompt, conversation):
+    messages = [{"role": "system", "content": prompt}]
+    for idx, message in enumerate(conversation):
+        if idx % 2 == 0:
+            role = "user"
+        else:
+            role = "assistant"
+        messages.append({"role": role, "content": message})
+    response = openai.ChatCompletion.create(model=model, messages=messages, temperature=0, max_tokens=25)
+    return response.choices[0].message.content.strip()
 
 def piece_list(env, player):
     return poslist2str(zip(*np.where(env.board == player)))

@@ -1,4 +1,5 @@
 import random
+import re
 import time
 
 from alphabeta import alphabeta
@@ -50,8 +51,11 @@ class HumanAgent(ReversiAgent):
     def pause(self):
         time.sleep(0.5)
 
+GPT_REGEX = re.compile(r'\[(?P<x>\d+), (?P<y>\d+)\]')
+
 class GPTAgent(ReversiAgent):
-    def __init__(self, model="text-curie-001", learning_shots=0, replay=None):
+
+    def __init__(self, model="gpt-3.5-turbo", learning_shots=0, replay=None):
         self.model = model
         self.learning_shots=learning_shots
         self.replay = replay
@@ -71,13 +75,11 @@ class GPTAgent(ReversiAgent):
         return move
     
     def parse_response(self, response):
-        try:
-            left, right = response.split(', ', 1)
-            right = right.split(']')[0]
-            x = int(left) - 1
-            y = int(right) - 1
-        except:
+        match = GPT_REGEX.search(response)
+        if match is None:
             raise ValueError(f"Couldn't parse GPT response '{response}'")
+        x = int(match.group('x')) - 1
+        y = int(match.group('y')) - 1
         return x, y
 
 
