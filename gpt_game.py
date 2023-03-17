@@ -37,5 +37,13 @@ for i in range(10):
                 results['opponent'].append(opponent)
                 results['shots'].append(shots)
                 results['gpt_player'].append(gpt_player)
-                results['result'].append(result)
+                results['victor'].append(result)
+
+results['result'] = 'Tie'
+df.loc[df['gpt_player'] == df['victor'], 'result'] = 'Win'
+df.loc[df['gpt_player'] == -df['victor'], 'result'] = 'Loss'
+df.loc[df['victor'] == 2, 'result'] = 'Invalid'
+df['gpt_player'].apply(lambda x: PLAYER[x][0])
+df = df.drop(columns=['victor'])
+
 pd.DataFrame(results).to_csv('gpt_results.csv', index=False)
