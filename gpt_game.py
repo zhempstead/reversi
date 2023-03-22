@@ -9,7 +9,7 @@ from lib.replay import Replay
 from lib.reversi_game import ReversiGame
 
 def gpt_game(dims, other_agent, gpt_player, shots, replay, record_file=None):
-    gpt = GPTAgent(model="gpt-3.5-turbo", learning_shots=shots, replay=replay)
+    gpt = GPTAgent(model="gpt-3.5-turbo", learning_shots=shots, replay=replay, visualize=True)
     if gpt_player == BLACK:
         dual = DualAgent(gpt, other_agent)
     else:
@@ -29,21 +29,22 @@ results = {'opponent': [], 'shots': [], 'gpt_player': [], 'victor': []}
 random = RandomAgent()
 greedy = ScoreGreedyAgent()
 minimax3 = ScoreMinimaxAgent(3)
-for i in range(10):
-    for shots in range(3):
-        for gpt_player in [BLACK, WHITE]:
-            for opponent, opp_agent in [('random', random), ('greedy', greedy), ('minimax3', minimax3)]:
-                result = gpt_game(6, opp_agent, gpt_player, shots, replay, f'replays/gpt_{i}_{opponent}_{shots}_{gpt_player}.json')
-                results['opponent'].append(opponent)
-                results['shots'].append(shots)
-                results['gpt_player'].append(gpt_player)
-                results['victor'].append(result)
-
-results['result'] = 'Tie'
-df.loc[df['gpt_player'] == df['victor'], 'result'] = 'Win'
-df.loc[df['gpt_player'] == -df['victor'], 'result'] = 'Loss'
-df.loc[df['victor'] == 2, 'result'] = 'Invalid'
-df['gpt_player'].apply(lambda x: PLAYER[x][0])
-df = df.drop(columns=['victor'])
-
-pd.DataFrame(results).to_csv('gpt_results.csv', index=False)
+try:
+    for i in range(10):
+        for shots in range(3):
+            for gpt_player in [BLACK, WHITE]:
+                for opponent, opp_agent in [('random', random), ('greedy', greedy), ('minimax3', minimax3)]:
+                    result = gpt_game(6, opp_agent, gpt_player, shots, replay, f'replays/gpt_{i}_{opponent}_{shots}_{gpt_player}.json')
+                    results['opponent'].append(opponent)
+                    results['shots'].append(shots)
+                    results['gpt_player'].append(gpt_player)
+                    results['victor'].append(result)
+finally:
+    df = pd.DataFrame(results)
+    df['result'] = 'Tie'
+    df.loc[df['gpt_player'] == df['victor'], 'result'] = 'Win'
+    df.loc[df['gpt_player'] == -df['victor'], 'result'] = 'Loss'
+    df.loc[df['victor'] == 2, 'result'] = 'Invalid'
+    df['gpt_player'].apply(lambda x: PLAYER[x][0])
+    df = df.drop(columns=['victor'])
+    df.to_csv('gpt_results.csv', index=False)

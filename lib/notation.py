@@ -25,3 +25,8 @@ def extract_notation(message):
         return None
     return notation2coords(match.group(0))
 
+def extract_all_notation(message):
+    '''
+    Return all Othello notation in message translated into coordinates
+    '''
+    return [notation2coords(m) for m in REGEX.findall(message)]
