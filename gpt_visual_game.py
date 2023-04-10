@@ -3,13 +3,13 @@ import json
 import numpy as np
 import pandas as pd
 
-from lib.agents import DualAgent, GreedyGPTAgent, GPTAgent, RandomAgent, ScoreGreedyAgent, ScoreMinimaxAgent
+from lib.agents import DualAgent, GreedyGPTVisualAgent, GPTAgent, RandomAgent, ScoreGreedyAgent, ScoreMinimaxAgent
 from lib.constants import PLAYER, BLACK, WHITE
 from lib.replay import Replay
 from lib.reversi_game import ReversiGame
 
-def gpt_game(dims, other_agent, gpt_player, shots, replay, visualize=False, record_file=None):
-    gpt = GreedyGPTAgent(model="gpt-3.5-turbo", learning_shots=shots, replay=replay, visualize=visualize)
+def gpt_game(dims, other_agent, gpt_player, shots, replay, record_file=None):
+    gpt = GreedyGPTVisualAgent(model="gpt-3.5-turbo", learning_shots=shots, replay=replay)
     if gpt_player == BLACK:
         dual = DualAgent(gpt, other_agent)
     else:
@@ -25,23 +25,21 @@ def gpt_game(dims, other_agent, gpt_player, shots, replay, visualize=False, reco
 # Replace this with any replay suitable for generating learning examples for GPT
 replay = Replay("replays/authoritative_8.json")
 
-results = {'opponent': [], 'shots': [], 'gpt_player': [], 'visualize': [], 'victor': []}
+results = {'opponent': [], 'shots': [], 'gpt_player': [], 'victor': []}
 random = RandomAgent()
 greedy = ScoreGreedyAgent()
 minimax3 = ScoreMinimaxAgent(3)
 try:
     for i in range(10):
-        for shots in range(2, 3):
+        for shots in (2, 1, 0):
             for gpt_player in [BLACK, WHITE]:
-                for visualize in [True, False]:
-                    #for opponent, opp_agent in [('random', random), ('greedy', greedy), ('minimax3', minimax3)]:
-                    for opponent, opp_agent in [('random', random)]:
-                        result = gpt_game(6, opp_agent, gpt_player, shots, replay, f'replays/gpt_{i}_{opponent}_{shots}_{gpt_player}.json')
-                        results['opponent'].append(opponent)
-                        results['shots'].append(shots)
-                        results['gpt_player'].append(gpt_player)
-                        results['visualize'].append(visualize)
-                        results['victor'].append(result)
+                #for opponent, opp_agent in [('random', random), ('greedy', greedy), ('minimax3', minimax3)]:
+                for opponent, opp_agent in [('random', random), ('greedy', greedy)]:
+                    result = gpt_game(6, opp_agent, gpt_player, shots, replay, f'replays/gpt_{i}_{opponent}_{shots}_{gpt_player}.json')
+                    results['opponent'].append(opponent)
+                    results['shots'].append(shots)
+                    results['gpt_player'].append(gpt_player)
+                    results['victor'].append(result)
 finally:
     df = pd.DataFrame(results)
     df['result'] = 'Tie'

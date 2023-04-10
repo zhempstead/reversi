@@ -23,7 +23,7 @@ try:
         replay = Replay(replay_file)
         for turn in range(len(replay.actions)):
             env = replay.state_before_turn(turn)
-            for shots in range(3):
+            for shots in range(1):
                 for viz in [True, False]:
                     resp = legal_query("gpt-3.5-turbo", env, shots, learning_replay, visualize=viz)
                     resp_moves = extract_all_notation(resp)
