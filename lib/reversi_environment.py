@@ -45,6 +45,7 @@ class ReversiEnvironment(object):
 
         return found
 
+
     def act(self, action):
         '''
         Returns
@@ -68,26 +69,42 @@ class ReversiEnvironment(object):
                 elif scores[WHITE] > scores[BLACK]:
                     reward = -1
         else:
-            row, col = action
             #if self.board[row, col] != EMPTY:
             #    raise ValueError("Square must be empty")
 
-            new_board[row, col] = self.curr_player
-
-            for crawl in crawls_from(row, col, self.dim):
-                flip_i = []
-                flip_j = []
-                for i, j in crawl:
-                    if new_board[i, j] == self.curr_player:
-                        new_board[flip_i, flip_j] = self.curr_player
-                        break
-                    elif new_board[i, j] == EMPTY:
-                        break
-                    flip_i.append(i)
-                    flip_j.append(j)
+            for _, flips in self.check_flips(action):
+                flips_i = [i for i, _ in flips]
+                flips_j = [j for _, j in flips]
+                new_board[flips_i, flips_j] = self.curr_player
+            new_board[action] = self.curr_player
 
         new_env = ReversiEnvironment(self.dim, new_board, opponent, new_last_moved)
         return (new_env, reward, game_over)
+
+    def check_flips(self, action):
+        '''
+        Returns List[Tuple[Position, List[Position]]].
+        Returns list of tuples. Each tuple consists of a current player's piece and a list of
+        opponent's pieces that would be flipped as a result of being in between that piece and the
+        new piece.
+        '''
+        if action is None:
+            return []
+
+        row, col = action
+        result = []
+        for crawl in crawls_from(row, col, self.dim):
+            potential_flips = []
+            for i, j in crawl:
+                if self.board[i, j] == self.curr_player:
+                    if len(potential_flips) > 0:
+                        result.append(((i, j), potential_flips))
+                    break
+                elif self.board[i, j] == EMPTY:
+                    break
+                potential_flips.append((i, j))
+        return result
+     
 
     def get_score(self):
         return {p: len(np.where(self.board == p)[0]) for p in [BLACK, WHITE]}

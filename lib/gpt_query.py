@@ -25,19 +25,42 @@ def board_visualization(env):
 
 {board2ascii(env.board, black_char, white_char, '.')}"""
 
+def show_hypothetical_move(env, gpt_player):
+    black_char = 'X' if gpt_player == BLACK else 'O'
+    white_char = 'X' if gpt_player == WHITE else 'O'
+    return board2ascii(env.board, black_char, white_char, '.')
+
 def move_prompt(env, legal_actions, visualize=False):
     state_prompt = board_visualization(env) if visualize else board_description(env)
     return f"""{state_prompt}
     
-It is your turn. Here are your legal moves: {poslist2str(legal_actions)}
+It is your turn. Here are your legal moves: {poslist2str(legal_actions)}.
 
-As an expert Reversi player, what is your best move? Just respond with the move itself."""
+Explain which of your opponent's pieces will be flipped by each legal move."""
+
+def greedy_prompt(env, legal_actions, visualize=False):
+    state_prompt = board_visualization(env) if visualize else board_description(env)
+    return f"""{state_prompt}
+
+It is your turn. Here are your legal moves: {poslist2str(legal_actions)}.
+
+Describe which pieces will be flipped by each of these legal moves. Then, in one sentence, tell me the move that flips the most pieces (if there's a tie, list all of the equally-good moves).
+"""
+
+def greedy_visual_prompt(env, legal_actions):
+    state_prompt = board_visualization(env)
+    return f"""{state_prompt}
+
+It is your turn. Here are your legal moves: {poslist2str(legal_actions)}.
+
+Show the resulting board state for each legal move. Then, in one sentence, tell me the move that flips the most pieces (if there's a tie, list all of the equally-good moves).
+"""
 
 def legal_prompt(env, visualize=False):
     state_prompt = board_visualization(env) if visualize else board_description(env)
     return f"""{state_prompt}
 
-It is your turn. List all of your legal moves (say 'None' if you have no legal moves)."""
+It is your turn. List all of your legal moves (say 'None' if you have no legal moves), explaining which pieces will be flipped and why."""
 
 
 def example_move_conversation(replay, turn, visualize=False):
@@ -50,6 +73,70 @@ def example_legal_conversation(replay, turn, visualize=False):
     env = replay.state_before_turn(turn)
     legal_actions = env.legal_actions()
     return (legal_prompt(env, visualize), poslist2str(legal_actions))
+
+def example_greedy_conversation(replay, turn, visualize=False):
+    env = replay.state_before_turn(turn)
+    legal_actions = env.legal_actions()
+    best_num_flips = 0
+    best_actions = []
+    action2flips = {}
+    action2num_flips = {}
+    for action in legal_actions:
+        flips = env.check_flips(action)
+        action2flips[action] = flips
+        num_flips = sum([len(fs) for _, fs in flips])
+        action2num_flips[action] = num_flips
+        if num_flips > best_num_flips:
+            best_num_flips = num_flips
+            best_actions = []
+        if num_flips == best_num_flips:
+            best_actions.append(action)
+    resp = []
+    for action in legal_actions:
+        resp.append(f"For move {coords2notation(action)}:")
+        for surround, flipped in action2flips[action]:
+            resp.append(f"- My piece at {coords2notation(surround)} means my opponent's pieces at {', '.join([coords2notation(f) for f in flipped])} are outflanked and flipped.")
+        resp.append(f"So this move flips {action2num_flips[action]} in total.\n")
+
+    if len(best_actions) == 1:
+        resp.append(f"So the best move is {coords2notation(best_actions[0])}.")
+    else:
+        resp.append(f"So the best moves are {', '.join([coords2notation(a) for a in best_actions])}.")
+
+    return (greedy_prompt(env, legal_actions, visualize), '\n'.join(resp))
+
+def example_greedy_visual_conversation(replay, turn):
+    env = replay.state_before_turn(turn)
+    gpt_player = env.curr_player
+    legal_actions = env.legal_actions()
+    best_num_flips = 0
+    best_actions = []
+    action2flips = {}
+    action2num_flips = {}
+    for action in legal_actions:
+        flips = env.check_flips(action)
+        action2flips[action] = flips
+        num_flips = sum([len(fs) for _, fs in flips])
+        action2num_flips[action] = num_flips
+        if num_flips > best_num_flips:
+            best_num_flips = num_flips
+            best_actions = []
+        if num_flips == best_num_flips:
+            best_actions.append(action)
+    resp = []
+    for action in legal_actions:
+        resp.append(f"For move {coords2notation(action)}:")
+        (hyp_env, _, _) = env.act(action)
+        resp.append(show_hypothetical_move(hyp_env, gpt_player))
+        resp.append(f"So this move flips {action2num_flips[action]} O pieces in total.\n")
+
+    if len(best_actions) == 1:
+        resp.append(f"So the best move is {coords2notation(best_actions[0])}.")
+    else:
+        resp.append(f"So the best moves are {', '.join([coords2notation(a) for a in best_actions])}.")
+
+    return (greedy_visual_prompt(env, legal_actions), '\n'.join(resp))
+
 
 def move_query(model, env, legal_moves, shots=0, replay=None, visualize=False):
     prompt = preamble(env)
@@ -67,8 +154,25 @@ def legal_query(model, env, shots=0, replay=None, visualize=False):
         turn = shot*3 + 2
         messages += example_legal_conversation(replay, turn, visualize)
     messages.append(legal_prompt(env, visualize))
-    print(legal_prompt(env, visualize))
-    return query(model, prompt, messages, max_tokens=100)
+    return query(model, prompt, messages, max_tokens=300)
+
+def greedy_query(model, env, legal_moves, shots=0, replay=None, visualize=False):
+    prompt = preamble(env)
+    messages = []
+    for shot in range(shots):
+        turn = shot*3 + 2
+        messages += example_greedy_conversation(replay, turn, visualize)
+    messages.append(greedy_prompt(env, legal_moves, visualize))
+    return query(model, prompt, messages, max_tokens=1000)
+
+def greedy_visual_query(model, env, legal_moves, shots=0, replay=None):
+    prompt = preamble(env)
+    messages = []
+    for shot in range(shots):
+        turn = shot*3 + 2
+        messages += example_greedy_visual_conversation(replay, turn)
+    messages.append(greedy_visual_prompt(env, legal_moves))
+    return query(model, prompt, messages, max_tokens=1000)
 
 @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
 def query(model, prompt, conversation, max_tokens=25):
@@ -76,11 +180,18 @@ def query(model, prompt, conversation, max_tokens=25):
     for idx, message in enumerate(conversation):
         if idx % 2 == 0:
             role = "user"
+            print('\033[32m' + message + '\033[0m')
         else:
             role = "assistant"
+            print("-----")
+            print('\033[34m' + message + '\033[0m')
+            print("-----")
         messages.append({"role": role, "content": message})
     response = openai.ChatCompletion.create(model=model, messages=messages, temperature=0, max_tokens=max_tokens)
-    return response.choices[0].message.content.strip()
+    resp = response.choices[0].message.content.strip()
+    print("-----")
+    print('\033[36m' + resp + '\033[0m')
+    return resp
 
 def piece_list(env, player):
     return poslist2str(zip(*np.where(env.board == player)))

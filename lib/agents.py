@@ -4,7 +4,7 @@ import time
 from .alphabeta import alphabeta
 from .constants import BLACK, WHITE, PLAYER
 from .display_board import board2str
-from .notation import extract_notation
+from .notation import extract_notation, extract_all_notation
 from . import gpt_query
 
 class ReversiAgent(object):
@@ -67,18 +67,40 @@ class GPTAgent(ReversiAgent):
         if len(legal_actions) == 1:
             print(f"Single legal action - no query sent")
             return list(legal_actions)[0]
-        response = gpt_query.move_query(self.model, env, legal_actions, self.learning_shots, self.replay, self.visualize)
-        move = self.parse_response(response)
-        if move not in legal_actions:
-            raise ValueError(f"{move} is not a legal action")
+        response = self.query(env, legal_actions)
+        move = self.parse_response(response, legal_actions)
         return move
+
+    def query(self, env, legal_actions):
+        return gpt_query.move_query(self.model, env, legal_actions, self.learning_shots, self.replay, self.visualize)
     
-    def parse_response(self, response):
+    def parse_response(self, response, legal_actions):
         match = extract_notation(response)
         if match is None:
             raise ValueError(f"Couldn't parse GPT response '{response}'")
         return match
 
+class GreedyGPTAgent(GPTAgent):
+    def query(self, env, legal_actions):
+        return gpt_query.greedy_query(self.model, env, legal_actions, self.learning_shots, self.replay, self.visualize)
+
+    def parse_response(self, response, legal_actions):
+        last_clause = response.split('\n\n')[-1]
+        moves = extract_all_notation(last_clause)
+        moves = [m for m in moves if m in legal_actions]
+        if moves:
+            return random.choice(moves)
+        elif "equal" in last_clause or "same" in last_clause:
+            return random.choice(list(legal_actions))
+        else:
+            raise ValueError(f"No legal move in final clause '{last_clause}'")
+
+class GreedyGPTVisualAgent(GreedyGPTAgent):
+    def __init__(self, model="gpt-3.5-turbo", learning_shots=0, replay=None):
+        return super().__init__(model=model, learning_shots=learning_shots, replay=replay, visualize=True)
+
+    def query(self, env, legal_actions):
+        return gpt_query.greedy_visual_query(self.model, env, legal_actions, self.learning_shots, self.replay)
 
 class RandomAgent(ReversiAgent):
     def policy(self, legal_actions, env, _):
