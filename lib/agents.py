@@ -102,6 +102,37 @@ class GreedyGPTVisualAgent(GreedyGPTAgent):
     def query(self, env, legal_actions):
         return gpt_query.greedy_visual_query(self.model, env, legal_actions, self.learning_shots, self.replay)
 
+class MinimaxGPTAgent(GPTAgent):
+    def __init__(self, model="gpt-3.5-turbo", learning_shots=0, replay=None, search_depth=1, lookahead=1):
+        '''
+        Search depth = how deep the minimax search tree goes when deciding on a move
+        Lookahead = how many moves in the future of minimax play to make before evaluating competing game states
+        '''
+        self.lookahead = lookahead
+        self.minimax = ScoreMinimaxAgent(search_depth)
+
+        return super().__init__(model=model, learning_shots=learning_shots, replay=replay, visualize=True)
+
+    def query(self, env, legal_actions):
+        outcomes = self.minimax_outcomes(env, legal_actions)
+        return gpt_query.minimax_query(self.model, env, outcomes, self.learning_shots, self.replay)
+
+    def minimax_outcomes(self, env, legal_actions):
+        outcomes = {}
+        for action in legal_actions:
+            action_env, reward, game_over = env.act(action)
+            prev_env = env
+            for turn in range(self.lookahead):
+                if game_over:
+                    break
+                next_action = self.minimax.choose_action(action_env, prev_env)
+                prev_env = action_env
+                action_env, reward, game_over = action_env.act(next_action)
+            outcomes[action] = (action_env, reward)
+        return outcomes
+
+
+
 class RandomAgent(ReversiAgent):
     def policy(self, legal_actions, env, _):
         return random.choice(list(legal_actions))

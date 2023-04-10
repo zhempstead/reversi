@@ -33,7 +33,7 @@ def show_hypothetical_move(env, gpt_player):
 def move_prompt(env, legal_actions, visualize=False):
     state_prompt = board_visualization(env) if visualize else board_description(env)
     return f"""{state_prompt}
-    
+ 
 It is your turn. Here are your legal moves: {poslist2str(legal_actions)}.
 
 Explain which of your opponent's pieces will be flipped by each legal move."""
@@ -55,6 +55,23 @@ It is your turn. Here are your legal moves: {poslist2str(legal_actions)}.
 
 Show the resulting board state for each legal move. Then, in one sentence, tell me the move that flips the most pieces (if there's a tie, list all of the equally-good moves).
 """
+
+def minimax_prompt(env, actions2outcomes):
+    legal_actions = list(actions2outcomes.keys())
+    prompts = [board_visualization(env)]
+    action_prompts = []
+    prompts.append(f"It is your turn.\nHere are your legal moves: {poslist2str(legal_actions)}.\nBelow, we predict the likely game state a few turns in the future for each legal choice.")
+    for action, (action_env, result) in actions2outcomes.items():
+        state = f"""Game state after a few turns if you choose {coords2notation(action)}:
+{show_hypothetical_move(action_env, env.curr_player)}"""
+        if result == env.curr_player:
+            state += "\n(the game would end with you winning)"
+        elif result == -env.curr_player:
+            state += "\n(the game would end with you losing)"
+        prompts.append(state)
+    prompts.append(f"Based on the above, which move is best?")
+    return "\n\n".join(prompts)
+        
 
 def legal_prompt(env, visualize=False):
     state_prompt = board_visualization(env) if visualize else board_description(env)
@@ -173,6 +190,13 @@ def greedy_visual_query(model, env, legal_moves, shots=0, replay=None):
         messages += example_greedy_visual_conversation(replay, turn)
     messages.append(greedy_visual_prompt(env, legal_moves))
     return query(model, prompt, messages, max_tokens=1000)
+
+def minimax_query(model, env, moves2outcomes, shots=0, replay=None):
+    if shots > 0:
+        raise NotImplementedError("minimax_query not compatible with few-shot learning")
+    prompt = preamble(env)
+    messages = [minimax_prompt(env, moves2outcomes)]
+    return query(model, prompt, messages, max_tokens=60)
 
 @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
 def query(model, prompt, conversation, max_tokens=25):
