@@ -16,7 +16,7 @@ class Replay(object):
         with open(record_file) as record_fp:
             record = json.load(record_fp)
         self.dim = record['dim']
-        self.actions = record['actions']
+        self.actions = [tuple([action if action is None else tuple(action), outcome]) for action, outcome in record['actions']]
 
         self.env = ReversiEnvironment(dim=self.dim)
         self.prev_env = self.env
@@ -25,7 +25,7 @@ class Replay(object):
         curr_turn = 0
         env = self.env
         while curr_turn < turn:
-            action = self.actions[curr_turn][0]
+            action = self.get_action(curr_turn)
             (env, _, _) = env.act(action)
             curr_turn += 1
         return env

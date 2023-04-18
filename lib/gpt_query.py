@@ -2,6 +2,7 @@ from dotenv import load_dotenv
 import numpy as np
 import os
 import openai
+import random
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 
 from .constants import PLAYER, BLACK, WHITE
@@ -79,6 +80,12 @@ def legal_prompt(env, visualize=False):
 
 It is your turn. List all of your legal moves (say 'None' if you have no legal moves), explaining which pieces will be flipped and why."""
 
+def accurate_move_prompt(env, action):
+    state_prompt = board_visualization(env)
+    return f"""{state_prompt}
+
+It is your turn. Show me the resulting board state if you were to choose {coords2notation(action)} as your next move."""
+
 
 def example_move_conversation(replay, turn, visualize=False):
     env = replay.state_before_turn(turn)
@@ -90,6 +97,13 @@ def example_legal_conversation(replay, turn, visualize=False):
     env = replay.state_before_turn(turn)
     legal_actions = env.legal_actions()
     return (legal_prompt(env, visualize), poslist2str(legal_actions))
+
+def example_accurate_move_prompt_conversation(replay, turn):
+    env = replay.state_before_turn(turn)
+    action = replay.get_action(turn)
+    result_env = replay.state_before_turn(turn+1)
+    return (accurate_move_prompt(env, action), show_hypothetical_move(result_env, env.curr_player))
+    
 
 def example_greedy_conversation(replay, turn, visualize=False):
     env = replay.state_before_turn(turn)
@@ -173,6 +187,23 @@ def legal_query(model, env, shots=0, replay=None, visualize=False):
     messages.append(legal_prompt(env, visualize))
     return query(model, prompt, messages, max_tokens=300)
 
+def accurate_move_query(model, replay, turn, shots=0, example_replay=None):
+    prompt = preamble(replay.state_before_turn(turn))
+    messages = []
+    ex_turns = []
+    for shot in range(shots):
+        while(True):
+            ex_turn = random.randrange(len(example_replay.actions) - 1)
+            if ex_turn in ex_turns:
+                continue
+            ex_action = example_replay.get_action(ex_turn)
+            if ex_action is not None:
+                break
+        ex_turns.append(ex_turn)
+        messages += example_accurate_move_prompt_conversation(example_replay, ex_turn)
+    messages.append(accurate_move_prompt(replay.state_before_turn(turn), replay.get_action(turn)))
+    return query(model, prompt, messages, max_tokens=150, strip=False)
+
 def greedy_query(model, env, legal_moves, shots=0, replay=None, visualize=False):
     prompt = preamble(env)
     messages = []
@@ -199,7 +230,7 @@ def minimax_query(model, env, moves2outcomes, shots=0, replay=None):
     return query(model, prompt, messages, max_tokens=60)
 
 @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
-def query(model, prompt, conversation, max_tokens=25):
+def query(model, prompt, conversation, max_tokens=25, strip=True):
     messages = [{"role": "system", "content": prompt}]
     for idx, message in enumerate(conversation):
         if idx % 2 == 0:
@@ -212,7 +243,10 @@ def query(model, prompt, conversation, max_tokens=25):
             print("-----")
         messages.append({"role": role, "content": message})
     response = openai.ChatCompletion.create(model=model, messages=messages, temperature=0, max_tokens=max_tokens)
-    resp = response.choices[0].message.content.strip()
+
+    resp = response.choices[0].message.content
+    if strip:
+        resp = resp.strip()
     print("-----")
     print('\033[36m' + resp + '\033[0m')
     return resp
